@@ -24,6 +24,155 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## ディレクトリ構成
+
+```
+examples/
+├── LEARNING_GUIDE.md                       # このファイル
+│
+├── amplifier_module_provider_claude_cli/   # Claude CLI Provider モジュール
+│   ├── __init__.py
+│   ├── provider.py
+│   └── mount.py
+│
+├── amplifier_module_tool_examples/         # 学習用ツールモジュール
+│   ├── __init__.py
+│   ├── tools.py
+│   └── mount.py
+│
+├── step1-basics/                           # Step 1: 基本構造
+├── step2-provider/                         # Step 2: Provider
+└── step3-tool/                             # Step 3: Tool
+```
+
+---
+
+## Amplifier Core モジュール規約
+
+### モジュール命名規則
+
+モジュールは `amplifier_module_{module_id}` の形式で命名します：
+
+```
+ディレクトリ名                              module-id
+─────────────────────────────────────────────────────────
+amplifier_module_provider_claude_cli   →   provider-claude-cli
+amplifier_module_tool_examples         →   tool-examples
+amplifier_module_loop_basic            →   loop-basic
+```
+
+### mount() 関数
+
+すべてのモジュールは `mount()` 関数をエクスポートする必要があります：
+
+```python
+async def mount(
+    coordinator: ModuleCoordinator,
+    config: dict[str, Any]
+) -> Callable[[], Awaitable[None]] | None:
+    """
+    モジュールを Coordinator にマウント。
+
+    Args:
+        coordinator: ModuleCoordinator インスタンス
+        config: モジュール設定（mount plan から渡される）
+
+    Returns:
+        クリーンアップ関数（または None）
+    """
+    # 1. インスタンス作成
+    instance = MyModule(config)
+
+    # 2. Coordinator にマウント
+    await coordinator.mount("providers", instance, name="my-module")
+
+    # 3. クリーンアップ関数を返す
+    async def cleanup():
+        await instance.close()
+    return cleanup
+```
+
+### ModuleLoader による読み込み
+
+```python
+from amplifier_core.loader import ModuleLoader
+
+loader = ModuleLoader(coordinator=session.coordinator)
+
+# モジュールをロードしてマウント
+mount_fn = await loader.load("provider-claude-cli", config={"mode": "controlled"})
+await mount_fn(session.coordinator)
+```
+
+### 本番での Entry Point 登録
+
+`pyproject.toml`:
+
+```toml
+[project.entry-points."amplifier.modules"]
+provider-claude-cli = "amplifier_module_provider_claude_cli:mount"
+tool-examples = "amplifier_module_tool_examples:mount"
+```
+
+---
+
+## 提供モジュール
+
+### provider-claude-cli
+
+**ローカルで認証済みの Claude Code CLI を Provider として使用**
+
+APIキー不要で実際の Claude とやり取りできます。
+
+| 設定 | 説明 | デフォルト |
+|------|------|----------|
+| `mode` | `"passthrough"` or `"controlled"` | `"controlled"` |
+| `model` | モデル名（sonnet, opus など） | なし |
+| `timeout` | タイムアウト秒数 | 300 |
+
+**モード比較:**
+
+| モード | ツール実行 | 用途 |
+|--------|-----------|------|
+| `passthrough` | CLI側 | CLIに全て任せる |
+| `controlled` | Amplifier側 | ツール実行を完全制御（推奨） |
+
+**controlled モードのアーキテクチャ:**
+
+```
+                      ┌─────────────────────┐
+  ChatRequest    ──▶  │ claude -p "..."     │
+  + ToolSpec          │ --tools ""          │  ← ツール無効化
+                      │ --output-format json│
+                      └─────────────────────┘
+                               │
+                               ▼
+                      ┌─────────────────────┐
+  ChatResponse   ◀──  │ finish_reason:      │
+  (tool_use)          │   "tool_use"        │
+                      │ content:            │
+                      │   [ToolCallBlock]   │
+                      └─────────────────────┘
+                               │
+                               ▼
+                      ┌─────────────────────┐
+  Tool.execute() ──▶  │ Amplifier側で実行   │  ← 完全制御
+                      └─────────────────────┘
+```
+
+### tool-examples
+
+**学習用ツール実装**
+
+| ツール | 説明 |
+|--------|------|
+| `calculator` | 四則演算 |
+| `weather` | 天気情報（モック） |
+| `file_reader` | ファイル読み取り（仮想FS） |
+| `multi_step` | 状態管理 |
+
+---
+
 ## 学習ステップ
 
 ### Step 1: 基本構造の理解
@@ -35,6 +184,11 @@
 - 基本的なイベントの発行と受信
 
 **ディレクトリ**: `step1-basics/`
+
+```bash
+cd examples/step1-basics
+python app.py
+```
 
 ---
 
@@ -48,21 +202,33 @@
 
 **ディレクトリ**: `step2-provider/`
 
+```bash
+cd examples/step2-provider
+python app.py
+```
+
 ---
 
 ### Step 3: Toolの実装
-**目標**: エージェントが使用できるツールを実装する
+**目標**: エージェントが使用できるツールを実装し、Claude CLI と統合する
 
 **学ぶこと**:
 - Toolプロトコルの理解
 - ToolCall / ToolResult の構造
-- 複数ツールのマウント
+- Amplifier Core モジュール規約
+- Claude CLI Provider との統合
 
 **ディレクトリ**: `step3-tool/`
 
+```bash
+cd examples/step3-tool
+python app.py              # 基本デモ
+python app.py --with-llm   # Claude CLI 統合デモ（APIキー不要）
+```
+
 ---
 
-### Step 4: Orchestratorの実装
+### Step 4: Orchestratorの実装（予定）
 **目標**: エージェントループを制御するOrchestratorを実装する
 
 **学ぶこと**:
@@ -70,54 +236,57 @@
 - プロンプト実行フロー
 - プロバイダーとツールの連携
 
-**ディレクトリ**: `step4-orchestrator/`
-
 ---
 
-### Step 5: ContextManagerの実装
+### Step 5: ContextManagerの実装（予定）
 **目標**: 会話履歴を管理するContextManagerを実装する
 
-**学ぶこと**:
-- ContextManagerプロトコルの理解
-- メッセージの追加と取得
-- コンパクション（要約）の仕組み
-
-**ディレクトリ**: `step5-context/`
-
 ---
 
-### Step 6: Hookシステムの活用
+### Step 6: Hookシステムの活用（予定）
 **目標**: イベントシステムを使った拡張性を理解する
 
-**学ぶこと**:
-- HookRegistryの使い方
-- イベントハンドラーの登録
-- HookResultによるフロー制御（deny, modify, inject_context）
-- 標準イベント一覧
-
-**ディレクトリ**: `step6-hooks/`
-
 ---
 
-### Step 7: 統合 - 完全なエージェント
+### Step 7: 統合 - 完全なエージェント（予定）
 **目標**: 全コンポーネントを統合して動作するエージェントを構築する
 
-**学ぶこと**:
-- 設定ファイルによるモジュール構成
-- ModuleLoaderによる動的ロード
-- 実用的なエージェントパターン
-
-**ディレクトリ**: `step7-integration/`
-
 ---
 
-## 各ステップの実行方法
+## 完全な設定例
 
-```bash
-# 例: Step 1を実行
-cd examples/step1-basics
-python app.py
+```python
+config = {
+    "session": {
+        "orchestrator": "loop-basic",
+        "context": "context-simple"
+    },
+    "providers": [
+        {
+            "module": "provider-claude-cli",
+            "config": {
+                "mode": "controlled",
+                "model": "sonnet"
+            }
+        }
+    ],
+    "tools": [
+        {
+            "module": "tool-examples",
+            "config": {
+                "tools": ["calculator", "weather"]
+            }
+        }
+    ],
+    "hooks": []
+}
+
+async with AmplifierSession(config) as session:
+    result = await session.execute("What is the weather in Tokyo?")
+    print(result)
 ```
+
+---
 
 ## コンポーネント関係図
 
@@ -146,6 +315,8 @@ orchestrator.execute()
     └──▶ hooks.emit("prompt:complete")
 ```
 
+---
+
 ## 必須 vs オプション
 
 | コンポーネント | 必須? | 説明 |
@@ -156,9 +327,34 @@ orchestrator.execute()
 | Tool | オプション | エージェント機能を拡張 |
 | Hook | オプション | 観測性・拡張性を提供 |
 
+---
+
+## クイックスタート
+
+### 1. 基本を理解する
+
+```bash
+cd examples/step1-basics && python app.py
+```
+
+### 2. Provider を理解する
+
+```bash
+cd examples/step2-provider && python app.py
+```
+
+### 3. Tool と Claude CLI を体験する
+
+```bash
+cd examples/step3-tool && python app.py --with-llm
+```
+
+---
+
 ## 参考ドキュメント
 
 - `/docs/code-reading/00-getting-started.md` - コードリーディングガイド
 - `/amplifier_core/interfaces.py` - 全プロトコル定義
 - `/amplifier_core/models.py` - データ構造
 - `/amplifier_core/events.py` - 標準イベント一覧
+- `/amplifier_core/loader.py` - モジュールローダー
