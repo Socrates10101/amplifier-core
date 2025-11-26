@@ -20,6 +20,24 @@ python3 app_standalone.py
 
 すべてのサンプルは**依存関係なし**で実行できます（Python 3.11+のみ）。
 
+### 🔍 実行フローを可視化したい場合
+
+**トレース版**を実行すると、イベントやコンポーネントの発火が詳細に表示されます：
+
+```bash
+# Example 03 のトレース版
+cd examples/03-with-tools
+python3 app_with_trace.py
+
+# Example 04 のトレース版
+cd examples/04-with-hooks
+python3 app_with_trace.py
+```
+
+詳細は以下を参照：
+- **[TRACE_EXAMPLES.md](./TRACE_EXAMPLES.md)** - トレース版サンプル一覧
+- **[VISUALIZATION_GUIDE.md](./VISUALIZATION_GUIDE.md)** - 可視化ガイド（記号の説明、学習パス、デバッグヒント）
+
 ## サンプルの進め方
 
 各サンプルは独立して実行できます。番号順に進めることで、徐々に機能を理解できます：

@@ -27,6 +27,22 @@ cd examples/04-with-hooks
 python3 app_standalone.py
 ```
 
+### 🔍 フック実行を可視化（トレース版）
+
+イベントとフックの実行タイミングを詳細に表示：
+
+```bash
+python3 app_with_trace.py
+```
+
+トレース版では以下が可視化されます：
+- イベント発火順序（`session:start`、`turn:start` など）
+- 各フックの実行タイミング
+- フックの戻り値（`continue` / `deny`）
+- セキュリティフックによるブロック処理
+
+詳細は [../TRACE_EXAMPLES.md](../TRACE_EXAMPLES.md) を参照。
+
 ## 学習ポイント
 
 ### Hook の実装

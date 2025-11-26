@@ -36,6 +36,22 @@ cd examples/03-with-tools
 python3 app_standalone.py
 ```
 
+### 🔍 実行フローを可視化（トレース版）
+
+イベントやコンポーネントの発火を詳細に表示：
+
+```bash
+python3 app_with_trace.py
+```
+
+トレース版では以下が可視化されます：
+- コンポーネントの呼び出し階層
+- イベント発火タイミング（`provider:pre`、`tool:pre` など）
+- ツール実行フロー
+- ターン単位の処理
+
+詳細は [../TRACE_EXAMPLES.md](../TRACE_EXAMPLES.md) を参照。
+
 ## 期待される出力
 
 ```

@@ -46,6 +46,19 @@ PYTHONPATH=/path/to/amplifier-core:$PYTHONPATH python3 app.py
 python3 app_standalone.py
 ```
 
+### 🔍 3つの発火ポイントを可視化（トレース版）
+
+各発火ポイントで何が起こるかを詳細に表示：
+
+```bash
+python3 app_with_trace.py
+```
+
+トレース版では以下が明確にわかります：
+- **発火ポイント 1/3**: `AmplifierSession(config)` でのインスタンス生成
+- **発火ポイント 2/3**: `await session.initialize()` でのモジュールマウント
+- **発火ポイント 3/3**: `await session.execute(prompt)` での実行フロー
+
 ## 期待される出力
 
 ```
