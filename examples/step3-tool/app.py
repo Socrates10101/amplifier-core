@@ -8,8 +8,8 @@ Step 3: Toolの実装
 4. Claude CLI Provider との統合
 
 実行方法:
-    python app.py              # 基本デモ
-    python app.py --with-llm   # Claude CLI との統合デモ
+    python app.py              # 全デモ（Claude CLI統合含む）
+    python app.py --no-llm     # Claude CLI なしの基本デモのみ
 """
 
 import asyncio
@@ -239,11 +239,11 @@ async def main():
     await demo_tool_basics()
     await demo_module_loading()
 
-    if "--with-llm" in sys.argv:
+    if "--no-llm" not in sys.argv:
         await demo_with_claude_cli()
     else:
         print("\n" + "-" * 40)
-        print("Tip: Run with --with-llm to test with Claude CLI")
+        print("Tip: Run without --no-llm to test with Claude CLI")
 
     await demo_full_config()
 
