@@ -33,11 +33,16 @@ examples/
 ├── step1-basics/                           # Step 1: 基本構造
 ├── step2-provider/                         # Step 2: Provider
 ├── step3-tool/                             # Step 3: Tool
-└── step4-orchestrator/                     # Step 4: Orchestrator
+├── step4-orchestrator/                     # Step 4: Orchestrator
+│   ├── app.py                              # デモアプリケーション
+│   ├── orchestrator.py                     # BasicLoopOrchestrator 実装
+│   ├── context.py                          # SimpleContextManager 実装
+│   ├── mount.py                            # mount() 関数
+│   └── README.md                           # ドキュメント
+└── step5-context/                          # Step 5: ContextManager詳細
     ├── app.py                              # デモアプリケーション
-    ├── orchestrator.py                     # BasicLoopOrchestrator 実装
-    ├── context.py                          # SimpleContextManager 実装
-    ├── mount.py                            # mount() 関数
+    ├── context.py                          # AdvancedContextManager 実装
+    ├── tokenizer.py                        # トークン計算ユーティリティ
     └── README.md                           # ドキュメント
 
 modules/
@@ -276,8 +281,53 @@ orchestrator.execute(prompt)
 
 ---
 
-### Step 5: ContextManagerの詳細実装（予定）
+### Step 5: ContextManagerの詳細実装
 **目標**: 高度なコンテキスト管理（トークン計算、要約コンパクション）を実装する
+
+**学ぶこと**:
+- トークン計算の仕組み（TokenCounter）
+- トークン予算管理（TokenBudget）
+- 要約コンパクションの実装
+- 重要度ベースのメッセージ保持
+
+**ディレクトリ**: `step5-context/`
+
+```bash
+cd examples/step5-context
+python app.py              # 基本デモ
+python app.py --with-llm   # Claude CLI 統合デモ（要約コンパクション使用）
+```
+
+**実装内容**:
+- `TokenCounter`: トークン数の計算ユーティリティ
+- `TokenBudget`: トークン予算の管理
+- `AdvancedContextManager`: 高度なコンテキスト管理
+
+**Step 4 からの進化**:
+
+| 項目 | Step 4 (SimpleContextManager) | Step 5 (AdvancedContextManager) |
+|------|-------------------------------|--------------------------------|
+| トークン計算 | メッセージ数のみ | 実際のトークン数を計算 |
+| コンパクション | 古いメッセージを削除 | 要約を生成して保持 |
+| 重要度判定 | なし | ツール結果・エラーを優先保持 |
+| システムプロンプト | 別管理 | 統合管理 + 保護 |
+
+**コンパクション戦略の比較**:
+
+```
+単純削除（Step 4）:
+  Before: [sys, u1, a1, u2, a2, u3, a3, u4, a4, u5, a5]
+  After:  [sys, u4, a4, u5, a5]  ← 古いメッセージを削除
+
+要約コンパクション（Step 5）:
+  Before: [sys, u1, a1, u2, a2, u3, a3, u4, a4, u5, a5]
+  After:  [sys, summary, u4, a4, u5, a5]  ← 要約で文脈を保持
+
+重要度ベース + 要約（推奨）:
+  Before: [sys, u1, a1(tool), u2, a2(error), u3, a3, u4, a4, u5, a5]
+  After:  [sys, summary, a1(tool), a2(error), u4, a4, u5, a5]
+          ↑ 重要なメッセージを保持
+```
 
 ---
 
@@ -391,6 +441,12 @@ cd examples/step3-tool && python app.py --with-llm
 
 ```bash
 cd examples/step4-orchestrator && python app.py --with-llm
+```
+
+### 5. ContextManager で高度なコンテキスト管理を実装する
+
+```bash
+cd examples/step5-context && python app.py --with-llm
 ```
 
 ---
