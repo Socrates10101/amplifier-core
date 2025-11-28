@@ -30,19 +30,26 @@
 examples/
 ├── LEARNING_GUIDE.md                       # このファイル
 │
+├── step1-basics/                           # Step 1: 基本構造
+├── step2-provider/                         # Step 2: Provider
+├── step3-tool/                             # Step 3: Tool
+└── step4-orchestrator/                     # Step 4: Orchestrator
+    ├── app.py                              # デモアプリケーション
+    ├── orchestrator.py                     # BasicLoopOrchestrator 実装
+    ├── context.py                          # SimpleContextManager 実装
+    ├── mount.py                            # mount() 関数
+    └── README.md                           # ドキュメント
+
+modules/
 ├── amplifier_module_provider_claude_cli/   # Claude CLI Provider モジュール
 │   ├── __init__.py
 │   ├── provider.py
 │   └── mount.py
 │
-├── amplifier_module_tool_examples/         # 学習用ツールモジュール
-│   ├── __init__.py
-│   ├── tools.py
-│   └── mount.py
-│
-├── step1-basics/                           # Step 1: 基本構造
-├── step2-provider/                         # Step 2: Provider
-└── step3-tool/                             # Step 3: Tool
+└── amplifier_module_tool_examples/         # 学習用ツールモジュール
+    ├── __init__.py
+    ├── tools.py
+    └── mount.py
 ```
 
 ---
@@ -228,18 +235,49 @@ python app.py --with-llm   # Claude CLI 統合デモ（APIキー不要）
 
 ---
 
-### Step 4: Orchestratorの実装（予定）
+### Step 4: Orchestratorの実装
 **目標**: エージェントループを制御するOrchestratorを実装する
 
 **学ぶこと**:
 - Orchestratorプロトコルの理解
+- ContextManagerプロトコルの理解
 - プロンプト実行フロー
 - プロバイダーとツールの連携
+- イベントの発行とフック処理
+
+**ディレクトリ**: `step4-orchestrator/`
+
+```bash
+cd examples/step4-orchestrator
+python app.py              # 基本デモ（モック Provider）
+python app.py --with-llm   # Claude CLI 統合デモ（APIキー不要）
+```
+
+**実装内容**:
+- `BasicLoopOrchestrator`: エージェントループを制御
+- `SimpleContextManager`: 会話履歴を管理
+
+**エージェントループのフロー**:
+```
+orchestrator.execute(prompt)
+    │
+    ├──▶ context.add_message(user_message)
+    │
+    └──▶ Main Loop (max_turns)
+          │
+          ├──▶ context.get_messages()
+          ├──▶ provider.complete(ChatRequest)
+          ├──▶ context.add_message(assistant_response)
+          │
+          └──▶ [ツールコールがあれば]
+                ├──▶ tool.execute(arguments)
+                └──▶ context.add_message(tool_result)
+```
 
 ---
 
-### Step 5: ContextManagerの実装（予定）
-**目標**: 会話履歴を管理するContextManagerを実装する
+### Step 5: ContextManagerの詳細実装（予定）
+**目標**: 高度なコンテキスト管理（トークン計算、要約コンパクション）を実装する
 
 ---
 
@@ -347,6 +385,12 @@ cd examples/step2-provider && python app.py
 
 ```bash
 cd examples/step3-tool && python app.py --with-llm
+```
+
+### 4. Orchestrator でエージェントループを実装する
+
+```bash
+cd examples/step4-orchestrator && python app.py --with-llm
 ```
 
 ---
