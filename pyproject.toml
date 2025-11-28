@@ -32,6 +32,10 @@ Documentation = "https://github.com/microsoft/amplifier-core/tree/main/docs"
 Repository = "https://github.com/microsoft/amplifier-core"
 Issues = "https://github.com/microsoft/amplifier-core/issues"
 
+[project.entry-points."amplifier.modules"]
+"provider-claude-cli" = "amplifier_module_provider_claude_cli:mount"
+"tool-examples" = "amplifier_module_tool_examples:mount"
+
 [build-system]
 requires = [
     "hatchling",
@@ -44,7 +48,14 @@ package = true
 [tool.hatch.build.targets.wheel]
 packages = [
     "amplifier_core",
+    "modules/amplifier_module_provider_claude_cli",
+    "modules/amplifier_module_tool_examples",
 ]
+
+# Map modules directory packages to root level for import
+[tool.hatch.build.targets.wheel.sources]
+"modules/amplifier_module_provider_claude_cli" = "amplifier_module_provider_claude_cli"
+"modules/amplifier_module_tool_examples" = "amplifier_module_tool_examples"
 
 [tool.hatch.metadata]
 allow-direct-references = true
